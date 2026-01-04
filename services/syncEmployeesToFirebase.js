@@ -15,7 +15,17 @@ async function syncEmployeesToFirebase() {
     console.log("🔄 Employee sync started:", new Date().toISOString());
 
     const employees = await Employee.find();
-
+    const currentWorkerIds = employees
+        .filter(emp => emp.name)
+        .map(emp => makeWorkerId(emp.name));
+    const existingWorkersSnapshot = await firestore.collection("workers").get();
+    for (const doc of existingWorkersSnapshot.docs) {
+        if (!currentWorkerIds.includes(doc.id)) {
+            await firestore.collection("workers").doc(doc.id).delete();
+            await firestore.collection("assignments").doc(doc.id).delete();
+            console.log(`🗑 Deleted old worker: ${doc.id}`);
+        }
+    }
     for (const emp of employees) {
         if (!emp.name) continue;
 
@@ -35,7 +45,6 @@ async function syncEmployeesToFirebase() {
             if (!item.includes(" - ")) continue;
 
             const [customerName, address] = item.split(" - ");
-
             const location = await getLatLng(address);
             if (!location) continue;
 
@@ -48,11 +57,11 @@ async function syncEmployeesToFirebase() {
             });
 
             index++;
-            await delay(1100); 
+            await delay(1100);
         }
 
         await firestore.collection("assignments").doc(workerId).set({
-            points,         
+            points,
             status: "pending",
             assignedAt: new Date()
         });
