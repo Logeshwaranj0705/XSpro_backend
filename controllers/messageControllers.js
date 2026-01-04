@@ -52,19 +52,18 @@ exports.messagerData = async (req, res) => {
 
             let statusMessage = null;
             if (isSameDay(dueDate, today)) {
-                const msg = `Today (${customerData.date}) is your due date. Kindly make payment.`;
+                const msg = `Dear Customer, ${customerData.loan_no} your ${item.product} loan payment date is today. Amt RS.${item.out_standing}(Out-standing) Kindly make the payment immediately to avoid further action. For any queries, contact our team at 9363318486. -Team ${item.finance}`;
                 await sendSMS(item.phone, msg);
                 statusMessage = "due today - message sent";
             } else if (isSameDay(fiveDaysBefore, today)) {
-                const msg = `Reminder: Your due date is on ${customerData.date}. Please make payment within 5 days.`;
+                const msg = `Dear Customer, ${customerData.loan_no} your ${item.product} loan payment date is 5 days away. Amt RS.${item.out_standing}(Out-standing) Kindly ensure timely payment. For any queries, contact our team at 9363318486. -Team ${item.finance}`;
                 await sendSMS(item.phone, msg);
                 statusMessage = "5 days before - message sent";
             } else if (isSameDay(threeDaysBefore, today)) {
-                const msg = `Reminder: Your due date ${customerData.date} is coming in 3 days. Kindly make payment.`;
+                const msg = `Dear Customer, ${customerData.loan_no} your ${item.product} loan payment date is 3 days away. Amt RS.${item.out_standing}(Out-standing) Please arrange payment to avoid penalties. For any queries, contact our team at 9363318486. -Team ${item.finance}`;
                 await sendSMS(item.phone, msg);
                 statusMessage = "3 days before - message sent";
             }
-
             if (statusMessage) {
                 customerData.statusMessage = statusMessage;
                 action.push(customerData);
