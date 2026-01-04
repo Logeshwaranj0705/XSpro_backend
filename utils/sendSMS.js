@@ -12,7 +12,7 @@ async function sendSMS(phone, message) {
             "https://www.fast2sms.com/dev/bulkV2",
             {
                 route: "v3",  
-                sender_id: "FSTSMS",    
+                sender_id: "XSPAYM",    
                 message: message,
                 numbers: toNumbers,
             },
