@@ -34,7 +34,7 @@ async function syncEmployeesToFirebase() {
         await firestore.collection("workers").doc(workerId).set({
             name: emp.name,
             phone: emp.phone || "",
-            password: "elsaddai_09",
+            password: "elshaddai_9897",
             updatedAt: new Date()
         });
 
