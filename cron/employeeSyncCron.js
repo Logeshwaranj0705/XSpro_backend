@@ -2,7 +2,7 @@ const cron = require("node-cron");
 const syncEmployeesToFirebase = require("../services/syncEmployeesToFirebase");
 
 cron.schedule(
-  "*/5 * * * *",
+  "0 6 * * *",
   async () => {
     try {
       console.log("⏳ Running employee sync...");
@@ -17,4 +17,4 @@ cron.schedule(
   }
 );
 
-console.log("⏰ Employee sync cron scheduled every 3 hours");
+console.log("⏰ Employee sync cron scheduled for 6AM IST Initiated");
