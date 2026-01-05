@@ -49,18 +49,20 @@ exports.messagerData = async (req, res) => {
                 noAction.push(customerData);
                 continue;
             }
-
             let statusMessage = null;
             if (isSameDay(dueDate, today)) {
-                const msg = `Dear Customer, ${customerData.loan_no} your ${item.product} loan payment date is today. Amt RS.${item.out_standing}(Out-standing) Kindly make the payment immediately to avoid further action. For any queries, contact our team at 9363318486. -Team ${item.finance}`;
+                const msg = `Dear Customer, ${customerData.loan_no} your ${item.product} loan payment date is today. Amt Rs.${item.out_standing} (Outstanding). Kindly make the payment immediately to avoid further action. For any queries, contact our team at 9363318486.
+                -Team ${item.finance}`;
                 await sendSMS(item.phone, msg);
                 statusMessage = "due today - message sent";
             } else if (isSameDay(fiveDaysBefore, today)) {
-                const msg = `Dear Customer, ${customerData.loan_no} your ${item.product} loan payment date is 5 days away. Amt RS.${item.out_standing}(Out-standing) Kindly ensure timely payment. For any queries, contact our team at 9363318486. -Team ${item.finance}`;
+                const msg = `Dear Customer, ${customerData.loan_no} your ${item.product} loan payment date is 5 days away. Amt Rs.${item.out_standing} (Outstanding). Kindly ensure timely payment. For any queries, contact our team at 9363318486.
+                -Team ${item.finance}`;
                 await sendSMS(item.phone, msg);
                 statusMessage = "5 days before - message sent";
             } else if (isSameDay(threeDaysBefore, today)) {
-                const msg = `Dear Customer, ${customerData.loan_no} your ${item.product} loan payment date is 3 days away. Amt RS.${item.out_standing}(Out-standing) Please arrange payment to avoid penalties. For any queries, contact our team at 9363318486. -Team ${item.finance}`;
+                const msg = `Dear Customer, ${customerData.loan_no} your ${item.product} loan payment date is 3 days away. Amt Rs.${item.out_standing} (Outstanding). Please arrange payment to avoid penalties. For any queries, contact our team at 9363318486.
+                -Team ${item.finance}`;
                 await sendSMS(item.phone, msg);
                 statusMessage = "3 days before - message sent";
             }
@@ -69,7 +71,6 @@ exports.messagerData = async (req, res) => {
                 action.push(customerData);
             }
         }
-
         return res.json({
             message: "SMS process finished",
             summaryCount: data.length,
