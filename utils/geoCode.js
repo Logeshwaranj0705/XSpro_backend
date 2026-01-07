@@ -1,5 +1,10 @@
 const axios = require("axios");
 
+function extractPincode(address) {
+  const match = address?.match(/\b\d{6}\b/);
+  return match ? match[0] : null;
+}
+
 function normalizeAddress(address) {
   if (!address) return "";
 
@@ -10,40 +15,55 @@ function normalizeAddress(address) {
     .trim();
 }
 
-
-async function googleGeocode(address) {
+async function googleGeocode(params) {
   const res = await axios.get(
     "https://maps.googleapis.com/maps/api/geocode/json",
     {
       params: {
-        address,
         region: "IN",
         key: process.env.GOOGLE_MAPS_API_KEY,
+        ...params,
       },
       timeout: 10000,
     }
   );
-
   return res.data;
 }
-
 
 async function getLatLng(address) {
   if (!address || address.length < 6) return null;
 
   try {
     const cleaned = normalizeAddress(address);
+    const pincode = extractPincode(cleaned);
+
+    let pincodeData = null;
+    let pincodeCenter = null;
+    let pincodeBounds = null;
+
+    if (pincode) {
+      pincodeData = await googleGeocode({
+        address: pincode,
+      });
+
+      if (pincodeData.status === "OK") {
+        const result = pincodeData.results[0];
+        pincodeCenter = result.geometry.location;
+        pincodeBounds = result.geometry.bounds || result.geometry.viewport;
+      }
+    }
 
     const attempts = [
-      `${cleaned}, Chennai, Tamil Nadu`,
-      `${cleaned}, Chennai`,
-      cleaned,
-    ];
+      pincode ? `${cleaned}, ${pincode}` : null,
+      pincode ? `${cleaned}` : null,
+      pincode ? `${pincode}` : null,
+    ].filter(Boolean);
 
     for (const query of attempts) {
-      if (!query || query.length < 6) continue;
-
-      const data = await googleGeocode(query);
+      const data = await googleGeocode({
+        address: query,
+        bounds: pincodeBounds,
+      });
 
       if (data.status === "OK" && data.results?.length) {
         const result = data.results[0];
@@ -55,19 +75,24 @@ async function getLatLng(address) {
           precision: result.geometry.location_type,
           placeId: result.place_id,
           formatted: result.formatted_address,
+          source: "street+pincode",
         };
-      }
-
-      if (data.status !== "ZERO_RESULTS") {
-        console.warn(
-          "⚠️ Google geocode warning:",
-          data.status,
-          data.error_message || ""
-        );
       }
     }
 
-    console.error("❌ Google Geocoding failed:", address);
+
+    if (pincodeCenter) {
+      return {
+        lat: pincodeCenter.lat,
+        lng: pincodeCenter.lng,
+        precision: "PINCODE_CENTER",
+        placeId: null,
+        formatted: `Pincode ${pincode}`,
+        source: "pincode_fallback",
+      };
+    }
+
+    console.error("❌ Geocoding failed:", address);
     return null;
 
   } catch (err) {
