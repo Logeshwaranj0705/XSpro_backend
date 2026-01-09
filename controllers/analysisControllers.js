@@ -56,9 +56,9 @@ exports.addData = async (req, res) => {
         make,
         reg_no,
         contact_person,
-        finance,
+        contact_person_cnt_number,
         product,
-        contact_person_cnt_number
+        finance
       } = rows[i];
 
       if (!name || !loan_no || !phone || !address || !status || !pinCode) {
@@ -86,7 +86,7 @@ exports.addData = async (req, res) => {
       }
 
       if (status === "due") {
-        const workEntry = `${name.trim()} - ${address.trim()}`;
+        const workEntry = `${name.trim()} - ${address.trim()} - ${loan_no}`;
         await Employee.updateOne(
           { _id: employee._id },
           { $addToSet: { work: workEntry } }
@@ -113,10 +113,10 @@ exports.addData = async (req, res) => {
               name: name.trim(),
               phone,
               make,
-              product,
-              finance,
               reg_no,
-              pinCode
+              pinCode,
+              product,
+              finance
             }
           },
           upsert: true
@@ -201,9 +201,9 @@ exports.downloadDataExcel = async (req, res) => {
       Pincode: item.pinCode,
       Contact_person: item.contact_person,
       Contact_person_cnt_number: item.contact_person_cnt_number,
-      Finance: item.finance,
+      Executive: item.employeeName,
       Product: item.product,
-      Executive: item.employeeName
+      Finance: item.finance
     }));
 
     const wb = xlsx.utils.book_new();
