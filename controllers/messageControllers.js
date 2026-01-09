@@ -1,85 +1,75 @@
 const Analysis = require("../models/analysis");
 const sendSMS = require("../utils/sendSMS");
 
-function isSameDay(d1, d2) {
-    return (
-        d1.getFullYear() === d2.getFullYear() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getDate() === d2.getDate()
-    );
-}
+const isSameDay = (d1, d2) => 
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
 
 exports.messagerData = async (req, res) => {
     try {
-        const queryUserId =
-            req.user.role === "admin" && req.query.userId
-                ? req.query.userId
-                : req.user.id;
-
+        const queryUserId = req.user.role === "admin" && req.query.userId ? req.query.userId : req.user.id;
         const today = new Date();
-
         const data = await Analysis.find({ userId: queryUserId });
 
         const action = [];
         const noAction = [];
 
         for (const item of data) {
-            if (!item.date) continue;
+            if (!item.date || item.status === "paid") {
+                noAction.push({ ...item._doc, reason: "Paid or No Date" });
+                continue;
+            }
 
             const dueDate = new Date(item.date);
-
             const fiveDaysBefore = new Date(dueDate);
             fiveDaysBefore.setDate(dueDate.getDate() - 5);
-
+            
             const threeDaysBefore = new Date(dueDate);
             threeDaysBefore.setDate(dueDate.getDate() - 3);
 
-            const customerData = {
-                name: item.name,
-                loan_no: item.loan_no,
-                phone: item.phone,
-                address: item.address || "",
-                date: dueDate.toISOString().split("T")[0],
-                employeeName: item.employeeName || "",
-                pinCode: item.pinCode || "",
-                status: item.status || "",
-                message: item.message || "",
-            };
-            if (item.status === "paid") {
-                noAction.push(customerData);
-                continue;
-            }
-            let statusMessage = null;
+            let msg = "";
+            let tId = "";
+            let statusMessage = "";
+
             if (isSameDay(dueDate, today)) {
-                const msg = `Dear Customer, ${customerData.loan_no} your ${item.product} loan payment date is today. Amt Rs.${item.out_standing} (Outstanding). Kindly make the payment immediately to avoid further action. For any queries, contact our team at 9363318486.
-                -Team ${item.finance}`;
-                await sendSMS(item.phone, msg);
+                msg = `Dear Customer, your loan account ${item.loan_no} payment of Rs.${item.out_standing} is due today.\nKindly make the payment immediately to avoid further action.\nFor queries, contact 9363318486.\n– Team ELSHADDAI ENTERPRISES`;
+                tId = process.env.SMS_TEMPLATE_DUE_TODAY;
                 statusMessage = "due today - message sent";
-            } else if (isSameDay(fiveDaysBefore, today)) {
-                const msg = `Dear Customer, ${customerData.loan_no} your ${item.product} loan payment date is 5 days away. Amt Rs.${item.out_standing} (Outstanding). Kindly ensure timely payment. For any queries, contact our team at 9363318486.
-                -Team ${item.finance}`;
-                await sendSMS(item.phone, msg);
-                statusMessage = "5 days before - message sent";
-            } else if (isSameDay(threeDaysBefore, today)) {
-                const msg = `Dear Customer, ${customerData.loan_no} your ${item.product} loan payment date is 3 days away. Amt Rs.${item.out_standing} (Outstanding). Please arrange payment to avoid penalties. For any queries, contact our team at 9363318486.
-                -Team ${item.finance}`;
-                await sendSMS(item.phone, msg);
+            } 
+            else if (isSameDay(threeDaysBefore, today)) {
+                msg = `Dear Customer, your loan account ${item.loan_no} payment of Rs.${item.out_standing} is due in 3 days.\nPlease arrange payment on time to avoid penalties.\nFor queries, contact 9363318486.\n– Team ELSHADDAI ENTERPRISES`;
+                tId = process.env.SMS_TEMPLATE_DUE_3_DAYS;
                 statusMessage = "3 days before - message sent";
+            } 
+            else if (isSameDay(fiveDaysBefore, today)) {
+                msg = `Dear Customer, your loan account ${item.loan_no} payment of Rs.${item.out_standing} is due in 5 days.\nKindly ensure timely payment.\nFor queries, contact 9363318486.\n– Team ELSHADDAI ENTERPRISES`;
+                tId = process.env.SMS_TEMPLATE_DUE_5_DAYS;
+                statusMessage = "5 days before - message sent";
             }
-            if (statusMessage) {
-                customerData.statusMessage = statusMessage;
-                action.push(customerData);
+
+            if (msg && tId) {
+                await sendSMS(item.phone, msg, tId);
+                action.push({ ...item._doc, statusMessage });
+            } else {
+                noAction.push({ ...item._doc, reason: "Date mismatch" });
             }
         }
-        return res.json({
-            message: "SMS process finished",
-            summaryCount: data.length,
+
+        return res.json({ 
+            success: true,
+            message: "SMS process finished", 
+            summary: {
+                total_processed: data.length,
+                messages_sent: action.length,
+                skipped: noAction.length
+            },
             action,
-            noAction,
+            noAction 
         });
+
     } catch (error) {
         console.error("Messager Error:", error);
         return res.status(500).json({ message: "Server error" });
     }
 };
-    
