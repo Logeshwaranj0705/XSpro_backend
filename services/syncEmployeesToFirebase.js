@@ -34,7 +34,7 @@ async function syncEmployeesToFirebase() {
         await firestore.collection("workers").doc(workerId).set({
             name: emp.name,
             phone: emp.phone || "",
-            password: "elshaddai_9897",
+            password: "elshaddai_09",
             updatedAt: new Date()
         });
 
@@ -44,13 +44,14 @@ async function syncEmployeesToFirebase() {
         for (const item of emp.work || []) {
             if (!item.includes(" - ")) continue;
 
-            const [customerName, address] = item.split(" - ");
+            const [customerName, address, loan_no] = item.split(" - ");
             const location = await getLatLng(address);
             if (!location) continue;
 
             points.push({
                 id: "p" + index,
                 name: customerName.trim(),
+                loan_no: loan_no,
                 lat: location.lat,
                 lng: location.lng,
                 visited: false
