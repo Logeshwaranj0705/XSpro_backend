@@ -1,39 +1,45 @@
 const axios = require("axios");
 
-async function sendSMS(phone, message) {
-    try {
-        const apiKey = process.env.FAST2SMS_API_KEY;
-        const numbers = Array.isArray(phone) ? phone : [phone];
-        const toNumbers = numbers
-            .map(num => num.replace("+91", ""))
-            .join(",");
-
-        const response = await axios.post(
-            "https://www.fast2sms.com/dev/bulkV2",
-            {
-                route: "v3",  
-                sender_id: "XSPAYM",    
-                message: message,
-                numbers: toNumbers,
-            },
-            {
-                headers: {
-                    authorization: apiKey,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        console.log("Fast2SMS Response:", response.data);
-        return true;
-
-    } catch (error) {
-        console.error(
-            "Fast2SMS Error:",
-            error.response?.data || error.message
-        );
-        return false;
+/**
+ * Sends a DLT-compliant SMS via Fast2SMS
+ * @param {string} phone 
+ * @param {string} message 
+ * @param {string} templateId 
+ */
+const sendSMS = async (phone, message, templateId) => {
+  try {
+    const cleanPhone = phone.toString().replace(/\D/g, "");
+    if (cleanPhone.length !== 10) {
+      console.error(`❌ Invalid phone number: ${phone}`);
+      return null;
     }
-}
+
+    const payload = {
+      route: "dlt_manual",
+      sender_id: "XSPAYM",
+      message: message,
+      numbers: cleanPhone,
+      entity_id: process.env.DLT_ENTITY_ID, 
+      template_id: templateId,              
+    };
+
+    console.log(`📨 Sending SMS to ${cleanPhone} (Template: ${templateId})`);
+
+    const response = await axios.post("https://www.fast2sms.com/dev/bulkV2", payload, {
+      headers: {
+        authorization: process.env.FAST2SMS_API_KEY,
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log("✅ Fast2SMS Response:", response.data);
+    return response.data;
+
+  } catch (error) {
+    const errorData = error.response?.data || error.message;
+    console.error("❌ SMS Error Details:", JSON.stringify(errorData, null, 2));
+    return null;
+  }
+};
 
 module.exports = sendSMS;
