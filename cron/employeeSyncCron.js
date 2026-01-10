@@ -1,10 +1,9 @@
 const cron = require("node-cron");
 const syncEmployeesToFirebase = require("../services/syncEmployeesToFirebase");
-
-let lastRunDate = null; 
+const CronLock = require("../models/CronLock");
 
 cron.schedule(
-  "*/5 * * * *", 
+  "*/5 * * * *", // every 5 minutes
   async () => {
     try {
       const now = new Date(
@@ -15,12 +14,23 @@ cron.schedule(
       const minutes = now.getMinutes();
       const today = now.toISOString().split("T")[0];
 
-      if (hours === 11 && minutes < 5 && lastRunDate !== today) {
-        console.log("⏳ Running 6AM employee sync...");
+      // ✅ Wider window: 11:00 – 11:30 IST
+      if (hours === 11 && minutes <= 30) {
+        const lock =
+          (await CronLock.findOne({ name: "employee-sync" })) ||
+          new CronLock({ name: "employee-sync" });
+
+        if (lock.lastRunDate === today) {
+          return; // already ran today
+        }
+
+        console.log("⏳ Running employee sync (FREE tier safe mode)");
 
         await syncEmployeesToFirebase();
 
-        lastRunDate = today;
+        lock.lastRunDate = today;
+        await lock.save();
+
         console.log("✅ Employee sync completed for", today);
       }
     } catch (err) {
@@ -32,4 +42,4 @@ cron.schedule(
   }
 );
 
-console.log("⏰ Employee sync cron armed for 6AM IST (FREE tier mode)");
+console.log("⏰ Employee sync armed for IST (FREE tier, restart-safe)");
