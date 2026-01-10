@@ -15,7 +15,7 @@ cron.schedule(
       const today = now.toISOString().split("T")[0];
 
       // ✅ Wider window: 11:00 – 11:30 IST
-      if (hours === 11 && minutes <= 30) {
+      if (hours === 12 && minutes <= 30) {
         const lock =
           (await CronLock.findOne({ name: "employee-sync" })) ||
           new CronLock({ name: "employee-sync" });
