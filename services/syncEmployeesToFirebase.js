@@ -1,6 +1,5 @@
 const Employee = require("../models/employee");
 const firestore = require("../config/firebase");
-const getLatLng = require("../utils/geoCode");
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
@@ -45,15 +44,13 @@ async function syncEmployeesToFirebase() {
             if (!item.includes(" - ")) continue;
 
             const [customerName, address, loan_no] = item.split(" - ");
-            const location = await getLatLng(address);
-            if (!location) continue;
 
             points.push({
                 id: "p" + index,
                 name: customerName.trim(),
                 loan_no: loan_no,
-                lat: location.lat,
-                lng: location.lng,
+                lat: " ",
+                lng: " ",
                 visited: false
             });
 
