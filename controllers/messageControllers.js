@@ -42,8 +42,6 @@ exports.messagerData = async (req, res) => {
 
       if (statusMessage) {
         action.push({ ...item._doc, statusMessage });
-      } else {
-        noAction.push({ ...item._doc, reason: "Date mismatch" });
       }
     }
 
