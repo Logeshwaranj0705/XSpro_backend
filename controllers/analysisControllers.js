@@ -7,12 +7,15 @@ const mongoose = require("mongoose");
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-function makeWorkerId(userId, name) {
-  return `${userId}_${name
+function makeWorkerId(name) {
+  if (!name || typeof name !== "string") return null;
+
+  return name
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, "_")}`;
+    .replace(/\s+/g, "_");
 }
+
 
 function formatDate(d) {
   if (!d) return new Date();
@@ -95,7 +98,7 @@ exports.addData = async (req, res) => {
       }
 
       if (status === "due") {
-        const workEntry = `${name.trim()} - ${address.trim()} - ${loan_no}`;
+        const workEntry = `${name.trim()} - ${loan_no}`;
         await Employee.updateOne(
           { _id: employee._id },
           { $addToSet: { work: workEntry } }
@@ -343,8 +346,8 @@ exports.syncEmployeesToFirebase = async (req, res) => {
     const employees = await Employee.find({ userId });
 
     const currentWorkerIds = employees
-      .filter(emp => emp.name)
-      .map(emp => makeWorkerId(userId, emp.name));
+      .map(emp => makeWorkerId(emp.name))
+      .filter(Boolean);
 
     const workersSnapshot = await firestore
       .collection("workers")
@@ -360,13 +363,11 @@ exports.syncEmployeesToFirebase = async (req, res) => {
     }
 
     for (const emp of employees) {
-      if (!emp.name) continue;
-
-      const workerId = makeWorkerId(userId, emp.name);
+      const workerId = makeWorkerId(emp.name);
+      if (!workerId) continue;
 
       await firestore.collection("workers").doc(workerId).set(
         {
-          userId,
           name: emp.name,
           phone: emp.phone || "",
           password: "elshaddai_09",
@@ -393,12 +394,11 @@ exports.syncEmployeesToFirebase = async (req, res) => {
         });
 
         index++;
-        await delay(800);
+        await delay(300);
       }
 
       await firestore.collection("assignments").doc(workerId).set(
         {
-          userId,
           points,
           status: "pending",
           assignedAt: new Date()
