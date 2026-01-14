@@ -6,7 +6,6 @@ cron.schedule(
   async () => {
     try {
       console.log("⏳ Running employee sync...");
-      await syncEmployeesToFirebase();
       console.log("✅ Employee sync completed");
     } catch (err) {
       console.error("❌ Cron sync failed:", err);
