@@ -5,7 +5,8 @@ const {
     deleteData,
     downloadDataExcel,
     getEmployeeUsageCount,
-    addUserNote
+    addUserNote,
+    syncEmployeesToFirebase
 } = require("../controllers/analysisControllers");
 const {protect}=require("../middleware/authMiddleware");
 
@@ -17,5 +18,6 @@ router.get("/downloadexcel",protect,downloadDataExcel);
 router.delete("/delete-all",protect,deleteData);
 router.get("/empcount",protect,getEmployeeUsageCount);
 router.post("/addnote",protect,addUserNote);
+router.post("/update-work",protect,syncEmployeesToFirebase)
 
 module.exports = router;
