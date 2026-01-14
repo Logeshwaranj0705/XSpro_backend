@@ -1,9 +1,18 @@
 const xlsx = require("xlsx");
+const firestore = require("../config/firebase");
 const Analysis = require("../models/analysis");
 const Employee = require("../models/employee");
 const Notes = require("../models/notes");
 const mongoose = require("mongoose");
 
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
+function makeWorkerId(userId, name) {
+  return `${userId}_${name
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "_")}`;
+}
 
 function formatDate(d) {
   if (!d) return new Date();
@@ -321,6 +330,94 @@ exports.addUserNote = async (req, res) => {
     res.status(500).json({
       message: "Failed to save note",
       error: err.message
+    });
+  }
+};
+
+exports.syncEmployeesToFirebase = async (req, res) => {
+  try {
+    const userId = getTargetUserId(req);
+
+    console.log("🔄 Firebase sync started | user:", userId);
+
+    const employees = await Employee.find({ userId });
+
+    const currentWorkerIds = employees
+      .filter(emp => emp.name)
+      .map(emp => makeWorkerId(userId, emp.name));
+
+    const workersSnapshot = await firestore
+      .collection("workers")
+      .where("userId", "==", userId)
+      .get();
+
+    for (const doc of workersSnapshot.docs) {
+      if (!currentWorkerIds.includes(doc.id)) {
+        await firestore.collection("workers").doc(doc.id).delete();
+        await firestore.collection("assignments").doc(doc.id).delete();
+        console.log(`🗑 Deleted worker: ${doc.id}`);
+      }
+    }
+
+    for (const emp of employees) {
+      if (!emp.name) continue;
+
+      const workerId = makeWorkerId(userId, emp.name);
+
+      await firestore.collection("workers").doc(workerId).set(
+        {
+          userId,
+          name: emp.name,
+          phone: emp.phone || "",
+          password: "elshaddai_09",
+          updatedAt: new Date()
+        },
+        { merge: true }
+      );
+
+      const points = [];
+      let index = 1;
+
+      for (const item of emp.work || []) {
+        if (!item.includes(" - ")) continue;
+
+        const [customerName, loan_no] = item.split(" - ");
+
+        points.push({
+          id: "p" + index,
+          name: customerName.trim(),
+          loan_no: loan_no?.trim(),
+          lat: "",
+          lng: "",
+          visited: false
+        });
+
+        index++;
+        await delay(800);
+      }
+
+      await firestore.collection("assignments").doc(workerId).set(
+        {
+          userId,
+          points,
+          status: "pending",
+          assignedAt: new Date()
+        },
+        { merge: true }
+      );
+
+      console.log(`✅ Synced: ${emp.name} | points: ${points.length}`);
+    }
+
+    res.json({
+      message: "Firebase sync completed successfully",
+      employeesSynced: employees.length
+    });
+  } catch (error) {
+    console.error("🔥 Firebase sync error:", error);
+    res.status(500).json({
+      message: "Firebase sync failed",
+      error: error.message
     });
   }
 };
