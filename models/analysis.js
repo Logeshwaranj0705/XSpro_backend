@@ -12,7 +12,6 @@ const AnalysisSchema = new mongoose.Schema({
   make: String,
   reg_no: String,
   finance: String,
-  product: String,
   contact_person: String,
   contact_person_cnt_number: { type: Number },
   employeeName: String,
