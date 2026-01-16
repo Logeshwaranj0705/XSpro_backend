@@ -82,14 +82,17 @@ exports.messageSend = async (req, res) => {
       let tId = "";
 
       if (isSameDay(dueDate, today)) {
-        msg = `Dear Customer, your loan account ${item.loan_no} payment of Rs.${item.out_standing} is due today. Kindly make the payment immediately. For queries, contact 9363318486. – Team ELSHADDAI ENTERPRISES`;
-        tId = process.env.SMS_TEMPLATE_DUE_TODAY;
+        msg = `Dear Customer, your ${item.finance} loan account ${item.loan} has an overdue amount of Rs.${item.out_standing}. Kindly make the payment at the earliest. For queries, contact our support team.
+        – Team ELSHADDAI ENTERPRISES`;
+        tId = process.env.SMS_TEMPLATE_DUE;
       } else if (isSameDay(threeDaysBefore, today)) {
-        msg = `Dear Customer, your loan account ${item.loan_no} payment of Rs.${item.out_standing} is due in 3 days. Please arrange payment on time. For queries, contact 9363318486. – Team ELSHADDAI ENTERPRISES`;
-        tId = process.env.SMS_TEMPLATE_DUE_3_DAYS;
+        msg = `Dear Customer, your ${item.finance} loan account ${item.loan} has an overdue amount of Rs.${item.out_standing}. Kindly make the payment at the earliest. For queries, contact our support team.
+        – Team ELSHADDAI ENTERPRISES`;
+        tId = process.env.SMS_TEMPLATE_DUE;
       } else if (isSameDay(fiveDaysBefore, today)) {
-        msg = `Dear Customer, your loan account ${item.loan_no} payment of Rs.${item.out_standing} is due in 5 days. Kindly ensure timely payment. For queries, contact 9363318486. – Team ELSHADDAI ENTERPRISES`;
-        tId = process.env.SMS_TEMPLATE_DUE_5_DAYS;
+        msg = `Dear Customer, your ${item.finance} loan account ${item.loan} has an overdue amount of Rs.${item.out_standing}. Kindly make the payment at the earliest. For queries, contact our support team.
+        – Team ELSHADDAI ENTERPRISES`;
+        tId = process.env.SMS_TEMPLATE_DUE;
       }
       if (msg && tId) {
         await sendSMS(item.phone, msg, tId);
