@@ -69,8 +69,7 @@ exports.addData = async (req, res) => {
         reg_no,
         contact_person,
         contact_person_cnt_number,
-        product,
-        finance
+        finance,
       } = rows[i];
 
       if (!name || !loan_no || !phone || !address || !status || !pinCode) {
@@ -127,7 +126,6 @@ exports.addData = async (req, res) => {
               make,
               reg_no,
               pinCode,
-              product,
               finance
             }
           },
@@ -214,7 +212,6 @@ exports.downloadDataExcel = async (req, res) => {
       Contact_person: item.contact_person,
       Contact_person_cnt_number: item.contact_person_cnt_number,
       Executive: item.employeeName,
-      Product: item.product,
       Finance: item.finance
     }));
 
